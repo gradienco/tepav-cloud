@@ -19,8 +19,9 @@ exports.newPacket = functions.database.ref('/packet/{pushId}').onCreate((snapsho
     const original = snapshot.val();
     //const uid = context.auth.uid;
     //snapshot.ref.child('user').set(uid);
-    const timestamp = admin.database.ServerValue.TIMESTAMP;
-    snapshot.ref.child('receiveTIme').set(timestamp);
+    // const timestamp = admin.database.ServerValue.TIMESTAMP;
+    const time = new Date().toISOString();
+    snapshot.ref.child('receiveTime').set(time);
 
     // Create a notification
     const payload = {
@@ -45,12 +46,21 @@ exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((
 
     //  Get the current value of what was written to the Realtime Database.
     const valueObject = change.after.val(); 
-    const timestamp = admin.database.ServerValue.TIMESTAMP;
+    // const timestamp = admin.database.ServerValue.TIMESTAMP;
+    const time = new Date().toISOString();
+    // console.log(time);
+    // console.log(valueObject.status);
 
-    if (valueObject.status == "cleaning") {
-        snapshot.ref.child('cleaningTime').set(timestamp);
-    } else if (valueObject.status == "sterilized") {
-        snapshot.ref.child('sterilizedTime').set(timestamp);
+    if (valueObject.status === "cleaning") {
+        // console.log("Cleaning");
+        if (!valueObject.hasOwnProperty('cleaningTime')){
+            change.after.ref.child('cleaningTime').set(time);
+        }
+    } else if (valueObject.status === "sterilized") {
+        // console.log("Sterilized");
+        if (!valueObject.hasOwnProperty('sterilizedTime')){
+            change.after.ref.child('sterilizedTime').set(time);
+        }
     }
 
     // Create a notification
@@ -70,5 +80,7 @@ exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((
 
     if (valueObject.hasOwnProperty('sterilizedTime')){
         return admin.messaging().sendToTopic("channelMain", payload, options);
-    }
+    } 
+
+    return true;
 });
