@@ -21,7 +21,6 @@ exports.newPacket = functions.database.ref('/packet/{pushId}').onCreate((snapsho
     //snapshot.ref.child('user').set(uid);
     // const timestamp = admin.database.ServerValue.TIMESTAMP;
     const time = new Date().toISOString();
-    snapshot.ref.child('receiveTime').set(time);
 
     // Create a notification
     const payload = {
@@ -38,7 +37,9 @@ exports.newPacket = functions.database.ref('/packet/{pushId}').onCreate((snapsho
         timeToLive: 60 * 60 * 24
     };
 
-    return admin.messaging().sendToTopic("channelMain", payload, options);
+    return admin.messaging().sendToTopic("channelMain", payload, options).then(() => {
+        return snapshot.ref.child('receiveTime').set(time);
+    })
 });
 
 exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((change, context) => {
@@ -50,18 +51,6 @@ exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((
     const time = new Date().toISOString();
     // console.log(time);
     // console.log(valueObject.status);
-
-    if (valueObject.status === "cleaning") {
-        // console.log("Cleaning");
-        if (!valueObject.hasOwnProperty('cleaningTime')){
-            change.after.ref.child('cleaningTime').set(time);
-        }
-    } else if (valueObject.status === "sterilized") {
-        // console.log("Sterilized");
-        if (!valueObject.hasOwnProperty('sterilizedTime')){
-            change.after.ref.child('sterilizedTime').set(time);
-        }
-    }
 
     // Create a notification
     const payload = {
@@ -78,9 +67,19 @@ exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((
         timeToLive: 60 * 60 * 24
     };
 
-    if (valueObject.hasOwnProperty('sterilizedTime')){
-        return admin.messaging().sendToTopic("channelMain", payload, options);
-    } 
+    if (valueObject.status === "cleaning") {
+        // console.log("Cleaning");
+        if (!valueObject.hasOwnProperty('cleaningTime')){
+            return change.after.ref.child('cleaningTime').set(time);
+        }
+    } else if (valueObject.status === "sterilized") {
+        // console.log("Sterilized");
+        if (!valueObject.hasOwnProperty('sterilizedTime')){
+            return admin.messaging().sendToTopic("channelMain", payload, options).then(() => {
+                return change.after.ref.child('sterilizedTime').set(time);
+            })
+        }
+    }
 
     return true;
 });
