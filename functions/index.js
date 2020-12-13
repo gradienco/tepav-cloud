@@ -23,21 +23,16 @@ exports.newPacket = functions.database.ref('/packet/{pushId}').onCreate((snapsho
     const time = new Date().toISOString();
 
     // Create a notification
-    const payload = {
+    var message = {
         notification: {
             title: "Paket Baru",
             body: "Ada paket baru tiba di box Tepav-mu nih",
             sound: "default"
-        }
-    };
+        },
+        topic: 'channelMain'
+    }
 
-    //Create an options object that contains the time to live for the notification and the priority
-    const options = {
-        priority: "high",
-        timeToLive: 60 * 60 * 24
-    };
-
-    return admin.messaging().sendToTopic("channelMain", payload, options).then(() => {
+    return admin.messaging().send(message).then(() => {
         return snapshot.ref.child('receiveTime').set(time);
     })
 });
@@ -53,19 +48,14 @@ exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((
     // console.log(valueObject.status);
 
     // Create a notification
-    const payload = {
+    var message = {
         notification: {
             title: "Sterilisasi Selesai",
             body: "Paket Anda telah selesai disterilisasi, silahkan ambil di box Tepav-mu",
             sound: "default"
-        }
-    };
-
-    //Create an options object that contains the time to live for the notification and the priority
-    const options = {
-        priority: "high",
-        timeToLive: 60 * 60 * 24
-    };
+        },
+        topic: 'channelMain'
+    }
 
     if (valueObject.status === "cleaning") {
         // console.log("Cleaning");
@@ -75,7 +65,7 @@ exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((
     } else if (valueObject.status === "sterilized") {
         // console.log("Sterilized");
         if (!valueObject.hasOwnProperty('sterilizedTime')){
-            return admin.messaging().sendToTopic("channelMain", payload, options).then(() => {
+            return admin.messaging().send(message).then(() => {
                 return change.after.ref.child('sterilizedTime').set(time);
             })
         }
