@@ -27,14 +27,18 @@ exports.newPacket = functions.database.ref('/packet/{pushId}').onCreate((snapsho
         notification: {
             title: "Paket Baru",
             body: "Ada paket baru tiba di box Tepav-mu nih",
-            sound: "default"
         },
         topic: 'channelMain'
     }
 
-    return admin.messaging().send(message).then(() => {
-        return snapshot.ref.child('receiveTime').set(time);
-    })
+    return admin.messaging().send(message)
+        .then((response) => {
+            console.log('Successfully sent message:', response);
+            return snapshot.ref.child('receiveTime').set(time);
+        })
+        .catch((error) => {
+            console.log('Error sending message:', error);
+        });
 });
 
 exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((change, context) => {
@@ -52,7 +56,6 @@ exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((
         notification: {
             title: "Sterilisasi Selesai",
             body: "Paket Anda telah selesai disterilisasi, silahkan ambil di box Tepav-mu",
-            sound: "default"
         },
         topic: 'channelMain'
     }
@@ -65,9 +68,14 @@ exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((
     } else if (valueObject.status === "sterilized") {
         // console.log("Sterilized");
         if (!valueObject.hasOwnProperty('sterilizedTime')){
-            return admin.messaging().send(message).then(() => {
+            return admin.messaging().send(message)
+            .then((response) => {
+                console.log('Successfully sent message:', response);
                 return change.after.ref.child('sterilizedTime').set(time);
             })
+            .catch((error) => {
+                console.log('Error sending message:', error);
+            });
         }
     }
 
