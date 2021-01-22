@@ -10,6 +10,7 @@ const functions = require('firebase-functions');
 
 //import admin module
 const admin = require('firebase-admin');
+const { error } = require('firebase-functions/lib/logger');
 admin.initializeApp(functions.config().firebase);
 
 
@@ -28,8 +29,8 @@ exports.newPacket = functions.database.ref('/packet/{pushId}').onCreate((snapsho
             title: "Paket Baru",
             body: "Ada paket baru tiba di box Tepav-mu nih",
         },
-        topic: 'channelMain'
-    }
+        topic: 'promotion'
+    };
 
     return admin.messaging().send(message)
         .then((response) => {
@@ -57,8 +58,8 @@ exports.sterilizedPacket = functions.database.ref('/packet/{pushId}').onUpdate((
             title: "Sterilisasi Selesai",
             body: "Paket Anda telah selesai disterilisasi, silahkan ambil di box Tepav-mu",
         },
-        topic: 'channelMain'
-    }
+        topic: 'promotion'
+    };
 
     if (valueObject.status === "cleaning") {
         // console.log("Cleaning");
